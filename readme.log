@@ -1,0 +1,342 @@
+- issue
+    - in cases where there is limited network access and or a concern of spoofing where communication is limited
+- needs
+    - an end-to-end encrypted communication channel with independent servers to be run locally and allowance for P2P connections
+- options
+    - signal servers
+        - pros:
+            - strong end-to-end encryption (Signal Protocol)
+            - open source codebase for transparency
+            - full control over messaging infrastructure if self-hosted
+            - good mobile app ecosystem
+        - cons:
+            - not designed for self-hosting; heavily dependent on cloud services
+            - requires phone number for account registration (privacy concern)
+            - no federation - centralized architecture
+            - complex setup requiring Redis clusters, valid TLS certificates, Java 24
+            - custom clients cannot connect to official Signal network
+            - no bridges, bots, or external API integrations
+        - ease of setup:
+            - difficult - requires extensive cloud service dependencies
+            - needs Redis clusters, PostgreSQL, valid domain with TLS
+            - Java 24 (Temurin) and Maven required
+            - not recommended for most self-hosting scenarios
+        - considerations:
+            - better suited for using official service than self-hosting
+            - if self-hosting needed, consider Matrix instead
+            - forked versions like CableIM exist but have limited support
+        - sources:
+            - https://softwaremill.com/can-you-self-host-the-signal-server/
+            - https://blog.iriyanto.com/self-deploy-the-latest-version-of-signal-server-v2025082200
+            - https://dev.to/apex-hkr/how-i-self-hosted-signal-private-messenger-taking-control-of-private-messaging-4ec0
+    - matrix based servers
+        - pros:
+            - federated architecture - no single point of control
+            - full data ownership and retention control
+            - bridges to other platforms (Slack, Discord, IRC, Telegram)
+            - E2E encryption via Olm/Megolm protocols
+            - active development, production-ready as of 2025
+            - sliding sync makes it responsive like modern messengers
+            - modest resources for small deployments (<350MB RAM, <1% CPU)
+            - Docker Compose deployment works well
+        - cons:
+            - requires PostgreSQL (SQLite will corrupt)
+            - Synapse (Python) can be resource-heavy on large federations
+            - database can grow to several GB even with few users
+            - no built-in admin panel - need third-party tools
+            - metadata leaks between federated servers
+            - E2E key management can be buggy across devices
+            - orphaned rooms accumulate, taking database space
+            - attachment cleanup is difficult (storage bloat)
+        - ease of setup:
+            - moderate - significantly improved since 2025
+            - Docker Compose with Traefik is adequate
+            - no Kubernetes required for small deployments
+            - requires valid domain and TLS certificate
+            - PostgreSQL setup is mandatory
+        - considerations:
+            - best choice for most self-hosting scenarios
+            - use Dendrite or Conduit for lighter alternatives to Synapse
+            - plan for database maintenance and backups
+            - Element is the recommended client
+        - sources:
+            - https://yaky.dev/2025-11-30-self-hosting-matrix/
+            - https://blog.klein.ruhr/self-hosting-matrix-in-2025
+            - https://blog.meister-security.de/beyond-signal-regaining-control-with-a-self-hosted-matrix-server/
+            - https://github.com/AmirDez/matrix-on-premise
+    - teamspeak servers
+        - pros:
+            - military-grade AES encryption for voice
+            - extremely lightweight (60-70MB RAM)
+            - superior audio quality (100Kbps consistent bitrate)
+            - full control over security settings
+            - flexible permissions system
+            - low latency voice communication
+            - 25+ million active users (established platform)
+        - cons:
+            - TeamSpeak 6 self-hosting not yet available (as of 2025)
+            - TeamSpeak 3: mature and fully self-hostable — stable binaries, lightweight, recommended for production voice servers
+            - TeamSpeak 4: never released publicly; development skipped
+            - TeamSpeak 5/"next": never released as a broadly supported server; not recommended for new self-hosted deployments
+            - TS6 upstream repo exists (early/alpha); building/self-hosting from source may be possible but not production-ready
+            - primarily voice-focused; supports text chat but very limited (basic channels only, no rich features)
+            - no image/file sharing capabilities in text chat
+            - no integrated video chat
+            - paid tiers required beyond 32 users ($55-$500/year)
+            - no federation capability
+            - limited to audio communication use cases
+        - ease of setup:
+            - easy - for TeamSpeak 3 server
+            - TeamSpeak 3 is compatible with TS6 client
+            - simple binary installation
+            - minimal resource requirements
+        - considerations:
+            - best for voice-only communication needs
+            - use TS3 server with TS6 client for now
+            - wait for TS6 server release for full features
+            - good for gaming communities, small teams
+        - sources:
+            - https://zap-hosting.com/en/blog/2025/01/teamspeak-is-back-new-features-new-design-and-much-more/
+            - https://github.com/teamspeak/teamspeak6-server
+            - https://hostkey.com/apps/communication/teamspeak/
+    - xmpp/prosody servers
+        - pros:
+            - extremely lightweight (~25MB RAM)
+            - federated protocol - talk across servers
+            - OMEMO end-to-end encryption
+            - mature, stable protocol (20+ years)
+            - simple self-hosting setup
+            - voice/video via TURN server
+            - permissive MIT license
+        - cons:
+            - fragmented client ecosystem
+            - less polished UX compared to modern messengers
+            - group chat (MUC) can be confusing
+            - requires TURN server for voice/video NAT traversal
+        - ease of setup:
+            - easy - Prosody is designed for simple configuration
+            - works on minimal hardware
+            - Docker deployment available
+            - requires domain and TLS certificate
+        - considerations:
+            - excellent for resource-constrained environments
+            - Conversations (Android), Gajim/Dino (desktop) recommended
+            - good for text-focused communication
+            - Prosody 13.x is current stable (2025)
+        - sources:
+            - https://prosody.im/
+            - https://voxelmanip.se/2025/06/25/setting-up-an-xmpp-server-with-prosody/
+            - https://roguesecurity.dev/blog/xmpp
+    - jitsi meet servers
+        - pros:
+            - WebRTC-based video conferencing
+            - no account required for participants
+            - E2E encryption available
+            - open source (Apache 2.0 license)
+            - supports large meetings with multiple video bridges
+            - browser-based - no client installation needed
+            - full self-hosting capability with complete control
+            - scalable architecture (add video bridges as needed)
+            - good documentation for server deployment
+        - cons:
+            - resource intensive (4GB+ RAM minimum)
+            - recording (Jibri) needs separate server (8-12GB RAM each)
+            - one Jibri = one simultaneous recording
+            - requires valid TLS certificate (mobile apps won't connect otherwise)
+            - real-time system - misconfiguration breaks functionality
+        - ease of setup:
+            - moderate - good documentation available
+            - Ubuntu 20.04/22.04 recommended
+            - requires OpenJDK 17
+            - ports 80, 443/tcp and 10000/udp needed
+            - Let's Encrypt integration available
+        - considerations:
+            - best for video conferencing needs
+            - not ideal for persistent chat
+            - combine with Matrix/XMPP for complete solution
+            - plan separate server for recording if needed
+        - sources:
+            - https://jitsi.github.io/handbook/docs/devops-guide/
+            - https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-requirements/
+            - https://jitsi.guide/blog/jitsi-open-source-self-host-video-conferencing-guide/
+- comparison
+    - resource usage (RAM):
+        - XMPP/Prosody: ~25MB (lowest)
+        - TeamSpeak 3: ~60-70MB
+        - Matrix/Synapse: ~350MB+ (grows with usage)
+        - Jitsi Meet: 4GB+ minimum
+        - Signal: varies (cloud-dependent)
+    - encryption:
+        - all options support E2E encryption
+        - Signal Protocol (Signal, Matrix)
+        - OMEMO (XMPP)
+        - AES (TeamSpeak)
+        - WebRTC/SRTP (Jitsi)
+    - federation:
+        - yes: Matrix, XMPP
+        - no: Signal, TeamSpeak, Jitsi
+    - primary use case:
+        - text/chat: Matrix, XMPP
+        - voice: TeamSpeak
+        - video: Jitsi Meet
+        - all-in-one: Matrix (with bridges)
+- recommendation by use case
+    - limited resources / minimal hardware:
+        - XMPP/Prosody
+    - full-featured chat with bridges:
+        - Matrix/Synapse
+    - voice communication / gaming:
+        - TeamSpeak 3
+    - video conferencing:
+        - Jitsi Meet
+    - maximum privacy (text):
+        - XMPP with OMEMO or Matrix with E2EE
+    - P2P focus:
+        - XMPP (with TURN) or Matrix
+- requirements (satisfaction conditions - must have)
+    - S1. hardware infrastructure
+        - local server device: Raspberry Pi 4+, old laptop, or small PC
+        - network equipment: router/switch for LAN
+        - storage: SD card or SSD (32GB+ recommended)
+        - power supply: reliable power, consider UPS
+        - user devices: phones/laptops for each user
+    - S2. network configuration
+        - local area network (LAN): wired (Ethernet) or WiFi
+        - static IP for server: e.g., 192.168.1.100
+        - local DNS (optional): or use IP directly
+        - no external dependencies: no cloud services, no Google/Apple push
+    - S3. software stack
+        - server software: Matrix (Synapse/Dendrite) or XMPP (Prosody)
+        - database: PostgreSQL (Matrix) or SQLite (XMPP)
+        - TLS certificates: self-signed is OK for local network
+        - client apps: F-Droid version (no Google dependencies)
+    - S4. security baseline
+        - end-to-end encryption: OMEMO (XMPP) or Olm/Megolm (Matrix)
+        - no phone number registration: use usernames instead
+        - local authentication: server-controlled user accounts
+        - physical security: server in secure location
+    - S5. operational baseline
+        - offline installation: pre-download all packages
+        - documentation: setup guide in local language
+        - backup plan: data export capability
+- optimizations (nice to have - improves experience)
+    - O1. censorship resistance (if internet available)
+        - traffic obfuscation: V2Ray, Shadowsocks, Outline
+        - domain fronting: route through CDNs
+        - ECH (Encrypted Client Hello): hide SNI from censors
+        - rotating IPs/domains: dynamic DNS, multiple endpoints
+        - bridge servers: intermediate nodes outside censored region
+    - O2. network resilience
+        - mesh networking: Meshtastic (LoRa) or Bridgefy (Bluetooth)
+        - multiple servers: federated setup
+        - offline message queue: store-and-forward
+        - peer-to-peer mode: direct device communication
+    - O3. usability improvements
+        - Element/SchildiChat: familiar modern UI
+        - voice/video (Jitsi): add video conferencing
+        - file sharing: image/video support
+        - multi-device sync: cross-device message access
+        - group chats: rooms/channels
+    - O4. advanced security
+        - disappearing messages: auto-delete after time
+        - plausible deniability: hidden/steganographic modes
+        - Tor/I2P integration: anonymize traffic
+        - hardware security keys: YubiKey, etc.
+        - full disk encryption: on server device
+    - O5. operational excellence
+        - monitoring/alerts: server health checks
+        - automated backups: scheduled data export
+        - user training: security awareness
+        - incident response plan: what to do if compromised
+- mesh networking backup layer
+    - meshtastic (LoRa-based)
+        - range: 1-10+ km depending on terrain
+        - hardware: LILYGO T-Beam, Heltec LoRa32, RAK WisBlock (~$25-50 each)
+        - power: week+ battery life, solar possible
+        - encryption: AES256
+        - setup: flash firmware, pair via Bluetooth to phone app
+        - limitations: text only, ~200 chars/message, low bandwidth
+        - best for: emergency coordination, rural areas, protests
+    - bridgefy (Bluetooth-based)
+        - range: ~100m direct, multi-hop extends range
+        - hardware: any smartphone with Bluetooth
+        - encryption: Signal Protocol
+        - setup: install app, enable Bluetooth
+        - limitations: requires density of users, battery drain
+        - best for: urban protests, temporary gatherings
+    - briar (Tor + Bluetooth + WiFi)
+        - modes: Internet (via Tor), WiFi direct, Bluetooth
+        - encryption: end-to-end, forward secrecy
+        - setup: install from F-Droid
+        - limitations: Android only, no iOS
+        - best for: activists, journalists, high-risk users
+- censorship circumvention
+    - v2ray/xray
+        - architecture: Client -> V2Ray Client -> Obfuscated Traffic -> V2Ray Server -> Internet
+        - protocols: VMess (encrypted), VLESS (lighter), Trojan (mimics HTTPS), XTLS (hardware-accelerated)
+        - recommended: VLESS + XTLS + Reality (most resistant to detection as of 2025)
+        - server requirements: VPS outside censored region ($5-10/month)
+    - shadowsocks-rust
+        - modern setup: use shadowsocks-rust (faster than original)
+        - obfuscation: add v2ray-plugin for WebSocket
+        - ciphers: chacha20-ietf-poly1305 or aes-256-gcm
+    - domain fronting
+        - concept: outer TLS SNI shows allowed CDN, inner HTTP Host shows real server
+        - status 2025: Google/Amazon disabled, Cloudflare limited, Azure/Fastly still work
+        - alternative: ECH (Encrypted Client Hello) - SNI encrypted
+    - outline VPN (for non-technical users)
+        - features: one-click setup, automatic Shadowsocks config, simple key sharing
+        - maintained by: Jigsaw (Google subsidiary)
+        - setup: Outline Manager -> create server -> share keys -> users install client
+    - detection avoidance tips
+        - do: use ports 443/8443, enable TLS 1.3 with ALPN, use REALITY, randomize packet sizes
+        - do not: use obvious ports (1080, 8388), leave default configs, share with too many users
+- warnings
+    - legal risks
+        - using circumvention tools may be illegal in some regions
+        - VPNs exist in legal gray area in China
+        - November 2025: China's Ministry of State Security issued warnings about VPN illegality
+        - users must understand and accept risks
+    - detection risks
+        - China's GFW uses machine learning to detect obfuscated traffic
+        - Deep Packet Inspection analyzes traffic patterns, not just content
+        - regional firewalls (e.g., Henan) are even more aggressive
+        - active probing can identify circumvention tools
+    - operational security
+        - physical security of server is paramount
+        - trust all users - one compromised device exposes others
+        - have a plan for device seizure scenarios
+        - consider duress features (panic wipe)
+- recommended architecture
+    - minimum viable setup (satisfies all S conditions)
+        - server: Raspberry Pi 4 or old laptop
+        - software: Prosody XMPP Server (~25MB RAM)
+        - TURN server: coturn for voice/video
+        - TLS: self-signed certificate
+        - network: local WiFi router (no internet required)
+        - clients: Conversations (Android/F-Droid), Dino (Desktop)
+    - enhanced setup (adds optimization layers)
+        - server: Matrix/Synapse + PostgreSQL + coturn + Jitsi Meet
+        - circumvention: V2Ray/Shadowsocks + domain fronting
+        - mesh backup: Meshtastic nodes (LoRa radios)
+- next steps
+    - decide primary communication type needed (text, voice, video, or all)
+        - text and voice with file sharing (image/video), video call is a plus
+    - evaluate available hardware resources
+    - choose solution based on comparison above
+    - plan network configuration (ports, domain, TLS)
+    - gather offline installation packages before deployment
+    - set up mesh backup for emergencies
+- sources
+    - censorship research
+        - https://gfw.report/publications/usenixsecurity25/en/
+        - https://arxiv.org/html/2503.02018v1
+        - https://gfw.report/publications/usenixsecurity23/en/
+        - https://gfw.report/publications/sp25/en/
+    - mesh networking
+        - https://bridgefy.me/
+        - https://cioprime.com/meshtastic-explained-the-best-off-grid-communication-and-mesh-network-tool-for-2025/
+        - https://safety.rsf.org/need-to-communicate-while-offline-try-a-mesh-messaging-app/
+    - degoogled apps
+        - https://f-droid.org/en/packages/im.vector.app/
+        - https://schildi.chat/android/

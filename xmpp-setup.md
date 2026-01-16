@@ -290,6 +290,211 @@ sudo prosodyctl check dns
 | Windows/Mac/Linux | Gajim | Feature-rich |
 | Web | Converse.js | Self-hostable |
 
+---
+
+## Offline Setup (No Internet During Installation)
+
+If you need to set up the server without internet access, download these packages beforehand on a machine with internet.
+
+### Packages to Download (Debian/Ubuntu)
+
+```bash
+# On a machine WITH internet, download all packages:
+mkdir ~/xmpp-offline && cd ~/xmpp-offline
+
+# Download Prosody and dependencies
+apt-get download prosody prosody-modules lua-sec lua-socket lua-expat \
+    lua-filesystem lua-event lua-dbi-sqlite3 lua-dbi-postgresql \
+    lua-bitop lua-zlib lua5.2 liblua5.2-0
+
+# Download dependencies recursively (recommended)
+apt-rdepends prosody | grep -v "^ " | xargs apt-get download
+
+# Also grab openssl for certificate generation
+apt-get download openssl
+```
+
+### Transfer to Offline Machine
+
+Copy the `~/xmpp-offline` directory via USB drive or local network.
+
+### Install Offline
+
+```bash
+cd ~/xmpp-offline
+sudo dpkg -i *.deb
+
+# If dependency errors occur:
+sudo apt-get install -f  # (only works if deps are in the folder)
+```
+
+### Client Apps to Pre-Download
+
+| Platform | App | Download Source |
+|----------|-----|-----------------|
+| Linux | Dino | AppImage from flathub or GitHub releases |
+| Linux | Gajim | AppImage or .deb from gajim.org |
+| Windows | Gajim | .exe installer from gajim.org |
+| Android | Conversations | APK from F-Droid (conversations.im) |
+
+---
+
+## Intranet-Only Setup (No Internet Ever)
+
+For a fully isolated local network without internet access.
+
+### Addressing Options (No External Domain Needed)
+
+| Method | Example | Pros | Cons |
+|--------|---------|------|------|
+| **IP Address** | `192.168.1.100` | Simplest | Hard to remember, changes |
+| **Hostname** | `chatserver` | Easy | Requires /etc/hosts on all clients |
+| **Local DNS** | `chat.local` | Professional | Requires DNS server (dnsmasq/Pi-hole) |
+| **.local mDNS** | `chatserver.local` | Auto-discovery | Requires Avahi/Bonjour |
+
+### Option A: Direct IP Address
+
+JIDs will look like: `user@192.168.1.100`
+
+**Prosody config:**
+```lua
+VirtualHost "192.168.1.100"
+admins = { "admin@192.168.1.100" }
+```
+
+**Clients connect to:** `192.168.1.100`
+
+**Downside:** If server IP changes, all JIDs break.
+
+### Option B: Hostname via /etc/hosts
+
+Add to `/etc/hosts` on **every client machine**:
+```
+192.168.1.100   chatserver
+```
+
+JIDs will look like: `user@chatserver`
+
+**Prosody config:**
+```lua
+VirtualHost "chatserver"
+admins = { "admin@chatserver" }
+```
+
+### Option C: Local DNS Server
+
+Run dnsmasq or Pi-hole on your network to resolve `chat.home` → server IP.
+
+**dnsmasq example** (on server or router):
+```
+address=/chat.home/192.168.1.100
+```
+
+JIDs: `user@chat.home`
+
+### TLS Certificates for Intranet
+
+Without internet, you can't use Let's Encrypt. Options:
+
+**Option 1: Self-Signed Certificate (Easiest)**
+```bash
+# Generate self-signed cert
+sudo prosodyctl cert generate chatserver
+
+# Or manually with openssl:
+openssl req -x509 -newkey rsa:4096 -keyout /etc/prosody/certs/chatserver.key \
+    -out /etc/prosody/certs/chatserver.crt -days 3650 -nodes \
+    -subj "/CN=chatserver"
+```
+
+**Prosody config for self-signed:**
+```lua
+ssl = {
+    certificate = "/etc/prosody/certs/chatserver.crt";
+    key = "/etc/prosody/certs/chatserver.key";
+}
+```
+
+**Client configuration:** Clients will warn about untrusted certificate. You must:
+- Accept/trust the certificate manually on first connect
+- Or import the certificate into client's trust store
+
+**Option 2: Private CA (More Work, Better UX)**
+1. Create your own Certificate Authority
+2. Generate server cert signed by your CA
+3. Install CA cert on all client devices
+4. No more warnings
+
+```bash
+# Create CA
+openssl genrsa -out myCA.key 4096
+openssl req -x509 -new -nodes -key myCA.key -sha256 -days 3650 -out myCA.crt \
+    -subj "/CN=My Home CA"
+
+# Create server cert
+openssl genrsa -out chatserver.key 2048
+openssl req -new -key chatserver.key -out chatserver.csr -subj "/CN=chatserver"
+openssl x509 -req -in chatserver.csr -CA myCA.crt -CAkey myCA.key \
+    -CAcreateserial -out chatserver.crt -days 3650 -sha256
+```
+
+### Option 3: Disable TLS (Not Recommended)
+
+Only for fully trusted networks with no security concerns:
+
+```lua
+-- In prosody.cfg.lua
+c2s_require_encryption = false
+s2s_require_encryption = false
+```
+
+### Intranet Prosody Config Example
+
+```lua
+-- /etc/prosody/prosody.cfg.lua for intranet
+
+admins = { "admin@chatserver" }
+
+modules_enabled = {
+    "roster"; "saslauth"; "tls"; "disco"; "carbons";
+    "pep"; "private"; "blocklist"; "vcard4"; "vcard_legacy";
+    "version"; "uptime"; "time"; "ping"; "mam"; "smacks";
+}
+
+-- No federation needed on intranet
+modules_disabled = { "s2s" }
+
+-- Self-signed certificate
+ssl = {
+    certificate = "/etc/prosody/certs/chatserver.crt";
+    key = "/etc/prosody/certs/chatserver.key";
+}
+
+VirtualHost "chatserver"
+    allow_registration = false
+
+-- Group chat
+Component "conference.chatserver" "muc"
+    modules_enabled = { "muc_mam" }
+```
+
+### What Won't Work on Intranet
+
+- Federation with external XMPP servers (obviously)
+- Let's Encrypt certificates
+- DDNS services
+- Push notifications to mobile apps (requires internet gateway)
+
+### What Works Fine on Intranet
+
+- All local messaging
+- Group chats (MUC)
+- File transfers
+- Voice/video calls (with local TURN server)
+- Message history (MAM)
+
+---
+
 ## Sources
 - [Prosody Documentation](https://prosody.im/doc/)
 - [JoinJabber Self-Hosting Guide](https://joinjabber.org/tutorials/self-hosted/)

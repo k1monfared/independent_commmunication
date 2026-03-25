@@ -1,35 +1,36 @@
-# Project Name
+# Independent Communication
 
-**Status**: 🔴 POC | **Mode**: 🤖 Claude Code | **Updated**: YYYY-MM-DD
+Research and setup guides for self-hosted, privacy-first communication systems that work on local networks without dependence on cloud services or big-tech ecosystems.
 
-Brief description of what this project does.
+## Problem
 
-## Features
+When network access is limited or there is a risk of surveillance/spoofing, you need an end-to-end encrypted communication channel backed by servers you control, with support for peer-to-peer fallback.
 
-- Feature 1
-- Feature 2
-- Feature 3
+## Key Requirements
 
-## Getting Started
+- End-to-end encrypted text, voice, and file sharing
+- Self-hosted on local hardware (Raspberry Pi, old laptop, etc.)
+- Works on a LAN with no internet dependency
+- No Google/Apple dependencies (F-Droid clients, no phone number registration)
+- Video calls are a nice-to-have
 
-Instructions for setup and usage.
+## Top Recommendations
 
-## Documentation
+| Use Case | Solution |
+|----------|----------|
+| Lightweight, minimal resources | **XMPP / Prosody** (~25 MB RAM) |
+| Full-featured chat with bridges | **Matrix / Synapse** (~350 MB+ RAM) |
+| Voice communication | **TeamSpeak 3** (~60 MB RAM) |
+| Video conferencing | **Jitsi Meet** (4 GB+ RAM) |
 
-- `STATUS.log` - Project status and progress tracking
-- `CLAUDE.md` - Claude Code instructions and conventions
-- See other documentation files as needed
+Both **Matrix** and **XMPP** score 7/7 on the core requirements. See the detailed comparison in [`readme.md`](readme.md).
 
-## Status Legend
+## Setup Guides
 
-- 🔴 POC / Early Stage
-- 🟡 MVP / In Progress
-- 🔵 Beta / Feature Complete
-- 🟢 Production / Active
-- ⚫ Maintenance / Template
+- [`matrix-setup.md`](matrix-setup.md) -- Self-hosting Matrix/Synapse on a local PC
+- [`xmpp-setup.md`](xmpp-setup.md) -- Self-hosting XMPP/Prosody on a local PC
+- [`teamspeak-setup.md`](teamspeak-setup.md) -- Self-hosting TeamSpeak 3 on a local PC
 
-## Mode Legend
+## Detailed Research
 
-- 🤖 Claude Code
-- 👤 Manual
-- 🔀 Hybrid
+The full platform comparison, requirements analysis, optimization conditions (censorship resistance, mesh networking, Tor integration), and deployment recommendations are in [`readme.md`](readme.md).
